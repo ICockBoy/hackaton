@@ -3,10 +3,13 @@ from aiogram.filters import Command, Text
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from bot.base import dbase
+from bot.base import dbase, bot
+from bot.config import moderate_channel
+from bot.states import start_states
 from bot.texts import start as start_texts
 from bot.buttons import start as start_buttons
 from bot.texts import register as register_texts
+from bot.buttons import admin as admin_buttons
 
 
 router = Router()
@@ -14,6 +17,18 @@ router = Router()
 
 @router.message(Command("start"))
 async def start_command(message: Message, state: FSMContext):
+    print(await state.get_data())
+    if dbase.admin.is_admin(message.chat.id):
+        kb = InlineKeyboardBuilder()
+        kb.row(admin_buttons.admin_panel)
+        kb.row(start_buttons.user_menu)
+        await message.answer(start_texts.choose_menu, reply_markup=kb.as_markup())
+        await state.set_state(start_states.none)
+        return
+    if dbase.houses.find_user_house(message.chat.id) is None:
+        kb = InlineKeyboardBuilder()
+        kb.row(start_buttons.button_faq)
+        await message.answer(start_texts.not_in_group_user, reply_markup=kb.as_markup())
     if not dbase.users_manager.user_in_database(message.chat.id):
         kb = InlineKeyboardBuilder()
         kb.row(start_buttons.register)

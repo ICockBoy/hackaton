@@ -8,4 +8,5 @@ button_faq = InlineKeyboardButton(text="F.A.Q (Частые вопросы)", ca
 exit_from_account = InlineKeyboardButton(text="Выйти из аккаунта", callback_data="exit_from_account")
 accept_exit = InlineKeyboardButton(text="Подтвердить", callback_data="accept_exit")
 decline_exit = InlineKeyboardButton(text="Отменить", callback_data="start")
+user_menu = InlineKeyboardButton(text="Пользовательское меню", callback_data="start")
 
