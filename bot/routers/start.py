@@ -1,5 +1,8 @@
+import asyncio
+from typing import Union
+
 from aiogram import Router
-from aiogram.filters import Command, Text
+from aiogram.filters import Command, Text, BaseFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -10,11 +13,21 @@ from bot.buttons import start as start_buttons
 from bot.texts import register as register_texts
 from bot.buttons import admin as admin_buttons
 
-
 router = Router()
 
 
-@router.message(Command("start"))
+class ChatTypeFilter1(BaseFilter):  # [1]
+    def __init__(self, chat_type: Union[str, list]):  # [2]
+        self.chat_type = chat_type
+
+    async def __call__(self, message: Message) -> bool:
+        if isinstance(self.chat_type, str):
+            return not (message.chat.type == self.chat_type)
+        else:
+            return not (message.chat.type in self.chat_type)
+
+
+@router.message(Command("start"), ChatTypeFilter1(chat_type=["group", "supergroup"]))
 async def start_command(message: Message, state: FSMContext):
     if dbase.admin.is_admin(message.chat.id):
         kb = InlineKeyboardBuilder()
@@ -96,3 +109,27 @@ async def exit_from_account(callback: CallbackQuery, state: FSMContext):
 async def accept_exit(callback: CallbackQuery, state: FSMContext):
     dbase.users_manager.remove_user(callback.message.chat.id)
     await callback.message.edit_text(start_texts.exit_success)
+
+
+class ChatTypeFilter2(BaseFilter):  # [1]
+    def __init__(self, chat_type: Union[str, list]): # [2]
+        self.chat_type = chat_type
+
+    async def __call__(self, message: Message) -> bool:
+        if not dbase.admin.is_admin(message.from_user.id):
+            if isinstance(self.chat_type, str):
+                return message.chat.type == self.chat_type
+            else:
+                return message.chat.type in self.chat_type
+
+
+@router.message(ChatTypeFilter2(chat_type=["group", "supergroup"]))
+async def start_command(message: Message, state: FSMContext):
+    if not dbase.users_manager.user_in_database(message.from_user.id):
+        message_new = await message.reply("Авторизуйтесь в боте, чтобы писать в эту группу")
+        await message.delete()
+        await asyncio.sleep(5)
+        await message_new.delete()
+        return
+    user = dbase.users_manager.get_user(message.from_user.id)
+    await message.reply(f"ФИО: {user.fio}\nподъезд: {user.entrance}\nэтаж: {user.floor}\nквартира: {user.apartment}\nномер телефона: {user.number}")

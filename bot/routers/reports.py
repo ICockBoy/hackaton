@@ -47,6 +47,9 @@ async def button_reports(callback: CallbackQuery, state: FSMContext):
 
 @router.message(reports_states.write_problem)
 async def write_problem(message: Message, state: FSMContext):
+    if message.text is None:
+        await message.answer("Нужно писать заявки исключительно текстом")
+        return
     data = await state.get_data()
     text = reports_texts.problem_text.format(data["problem_type"], message.text)
     kb = InlineKeyboardBuilder()
@@ -63,8 +66,9 @@ async def report_accept(callback: CallbackQuery, state: FSMContext):
         InlineKeyboardButton(text="Написать пользователю", url=f"https://t.me/{callback.from_user.username}"))
     house_name = dbase.houses.find_user_house(callback.message.chat.id)
     house = dbase.houses.get_house(house_name)
+    user = dbase.users_manager.get_user(callback.message.chat.id)
     await bot.send_message(house.moderate_group_id,
-                           callback.message.text,
+                           callback.message.text + f"\n\n->ФИО: {user.fio}\nподъезд: {user.entrance}\nэтаж: {user.floor}\nквартира: {user.apartment}\nномер телефона: {user.number}",
                            message_thread_id=house.moderate_topic_reports,
                            reply_markup=kb.as_markup())
     await callback.message.edit_text(reports_texts.problem_to_moderate)

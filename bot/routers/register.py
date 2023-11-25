@@ -124,6 +124,12 @@ async def accept_order(callback: CallbackQuery, state: FSMContext):
     user_id = callback.data.split("/")[1]
     user = dbase.users_manager.get_user(user_id)
     user.in_register = False
+    house_name = dbase.houses.find_user_house(user_id)
+    house = dbase.houses.get_house(house_name)
+    if ("Подъезд " + user.entrance) not in house.users_group_topics:
+        topic = await bot.create_forum_topic(house.users_group_id, ("Подъезд " + user.entrance))
+        house.users_group_topics[("Подъезд " + user.entrance)] = topic.message_thread_id
+        dbase.houses.set_house(house_name, house)
     dbase.users_manager.save_user(user_id, user)
     await bot.send_message(int(user_id), register_texts.request_was_approved)
     await callback.message.edit_text(register_texts.success)

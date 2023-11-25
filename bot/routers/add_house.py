@@ -68,7 +68,7 @@ async def write_house_name(message: Message):
         await state.set_data(data)
         kb = InlineKeyboardBuilder()
         kb.row(InlineKeyboardButton(text="Проверить", callback_data=f"check_group/{message.chat.id}"))
-        await message.answer("Вы хотите использовать эту группу?", reply_markup=kb.as_markup())
+        await message.answer("Проверить группу для добавления?", reply_markup=kb.as_markup())
 
 
 @router.callback_query(Text(startswith="check_group"))
@@ -107,8 +107,17 @@ async def add_house(callback: CallbackQuery):
         chat_permissions.can_change_info = False
         chat_permissions.can_invite_users = False
         chat_permissions.can_pin_messages = False
-        chat_permissions.can_send_other_messages = False
+        chat_permissions.can_send_video_notes = True
+        chat_permissions.can_send_other_messages = True
+        chat_permissions.can_send_polls = True
+        chat_permissions.can_send_documents = True
+        chat_permissions.can_send_photos = True
+        chat_permissions.can_send_videos = True
+        chat_permissions.can_send_audios = True
+        chat_permissions.can_send_voice_notes = True
+
         await bot.set_chat_title(group_id, data["house_name"])
+
         await bot.set_chat_permissions(group_id, chat_permissions)
 
     if await state.get_state() == add_house_states.get_moderate_group and data["users_group_id"] != int(group_id):
