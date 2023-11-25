@@ -6,7 +6,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.base import dbase, bot
-from bot.config import moderate_channel
 from bot.states import register_states, start_states
 from bot.subjects.user import User
 from bot.texts import register as register_texts
@@ -106,12 +105,15 @@ async def all_good(callback: CallbackQuery, state: FSMContext):
     kb.row(InlineKeyboardButton(text="Одобрить", callback_data=f"accept_order/{callback.message.chat.id}"))
     kb.row(InlineKeyboardButton(text="Отклонить", callback_data=f"decline_order/{callback.message.chat.id}"))
     dbase.users_manager.save_user(callback.message.chat.id, user)
-    await bot.send_message(moderate_channel,
+    house_name = dbase.houses.find_user_house(callback.message.chat.id)
+    house = dbase.houses.get_house(house_name)
+    await bot.send_message(house.moderate_group_id,
                            register_texts.in_moderate_to_admin.format(data["fio"],
                                                                       data["entrance"],
                                                                       data["floor"],
                                                                       data["apartment"],
                                                                       data["number"]),
+                           message_thread_id=house.moderate_topic_register,
                            reply_markup=kb.as_markup())
     await callback.message.edit_text(register_texts.in_moderate)
     await state.set_state(start_states.none)
