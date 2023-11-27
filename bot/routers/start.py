@@ -57,6 +57,7 @@ async def start_command(message: Message, state: FSMContext):
         kb.row(start_buttons.button_reports)
         kb.row(start_buttons.button_requests)
         kb.row(start_buttons.button_faq)
+        kb.row(start_buttons.parking)
         kb.row(start_buttons.exit_from_account)
         await message.answer(start_texts.personal_menu.format(user.fio), reply_markup=kb.as_markup())
 
@@ -84,6 +85,7 @@ async def start_callback(callback: CallbackQuery, state: FSMContext):
         kb.row(start_buttons.button_reports)
         kb.row(start_buttons.button_requests)
         kb.row(start_buttons.button_faq)
+        kb.row(start_buttons.parking)
         kb.row(start_buttons.exit_from_account)
         await callback.message.edit_text(start_texts.personal_menu.format(user.fio), reply_markup=kb.as_markup())
 
@@ -95,7 +97,7 @@ async def user_to_house(callback: CallbackQuery, state: FSMContext):
     else:
         house_name = dbase.houses.find_house_from_group_id(callback.message.chat.id)
         dbase.houses.add_user(house_name, callback.from_user.id)
-        await callback.answer("Успешно!✅ Вы закреплены за домом. Теперь можете перейти в бота.")
+        await callback.answer("Успешно!✅ Вы закреплены за домом. Теперь можете перейти в бота.", show_alert=True)
 
 
 @router.callback_query(Text(start_buttons.exit_from_account.callback_data))
@@ -116,7 +118,7 @@ class ChatTypeFilter2(BaseFilter):  # [1]
         self.chat_type = chat_type
 
     async def __call__(self, message: Message) -> bool:
-        if not dbase.admin.is_admin(message.from_user.id):
+        if not dbase.admin.is_admin(message.from_user.id) and message.text is not None:
             if isinstance(self.chat_type, str):
                 return message.chat.type == self.chat_type
             else:
